@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jhit.admin.member.dao.MemberDao">
+	
+    <select id="findById" resultType="com.jhit.admin.member.vo.MemberVO">
+        SELECT * 
+        FROM jhit_app.user
+        WHERE id = #{id}
+    </select>
+    
+</mapper>

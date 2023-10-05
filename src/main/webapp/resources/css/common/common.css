@@ -1,0 +1,70 @@
+@font-face {
+	font-family: NanumSquare_acR;
+	src: url("/resources/font/Nanumsquare_ac_TTF/NanumSquare_acR.ttf") format("truetype");
+}
+@font-face {
+	font-family: NanumSquare_acL;
+	src: url("/resources/font/Nanumsquare_ac_TTF/NanumSquare_acL.ttf") format("truetype");
+}
+@font-face {
+	font-family: NanumSquare_acB;
+	src: url("/resources/font/Nanumsquare_ac_TTF/NanumSquare_acB.ttf") format("truetype");
+}
+
+
+header div {
+	font-family: "NanumSquare_acB" !important;
+}
+
+span, p {
+ 	font-family: "NanumSquare_acR" !important;
+ 	font-style: normal;
+ 	font-weight: normal;
+}
+
+p {
+	font-family: "NanumSquare_acR" !important;
+	font-style: normal;
+ 	font-weight: normal;
+}
+
+.main {
+	min-height:100%; 
+    padding-bottom:60px; 
+    box-sizing:border-box;
+}
+
+.footer {
+  	position: absolute;
+  	/* margin-top: -50px; */
+  	left: 0;
+  	width: 100%;
+  	padding: 15px 0;
+}
+
+.ui.sidebar.visible ~ .pusher {
+    width: calc(100% - 260px);
+}
+
+.ui.left.visible.sidebar, .ui.right.visible.sidebar {
+	border-radius : 0px 30px 0px 0px !important;
+	background : #fff;
+}
+
+.ui.sidebar.menu .item {
+	color: rgba(0,0,0,.87);
+}
+
+.dropdown .menu .header {
+	padding-top: 3.9px !important;
+  	padding-bottom: 3.9px !important;
+}
+
+ .title.item {
+   padding: .92857143em 1.14285714em !important;
+ }
+ 
+  .sidebar .item i {
+   font-size: 24px;
+   margin-top: -5px !important;
+ }

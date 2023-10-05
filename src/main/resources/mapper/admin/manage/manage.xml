@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jhit.admin.manage.dao.ManageDao">
+	
+	<sql id="header">
+        SELECT *
+        FROM (
+            SELECT (ROW_NUMBER() OVER()) as rn, A.*
+            FROM (    
+    </sql>
+    
+    <sql id="footer">
+            ) A
+        ) B WHERE rn BETWEEN #{start} AND #{end}    
+    </sql>
+    
+	<!-- 총건수 조회 -->
+	<select id="openTotalCount" resultType="int" parameterType="com.jhit.admin.manage.vo.ManageVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="openList" />
+				)A
+	</select>
+	<select id="nationTotalCount" resultType="int" parameterType="com.jhit.admin.manage.vo.ManageVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="nationList" />
+				)A
+	</select>
+	<select id="constTotalCount" resultType="int" parameterType="com.jhit.admin.manage.vo.ManageVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="constList" />
+				)A
+	</select>
+	
+	<select id="codeInfo" parameterType="String" resultType="com.jhit.admin.manage.vo.ManageVO">
+		SELECT code_id codeId
+				  , code_sn codeSn
+				  , code_cn codeCn
+		FROM jhit_app.dtmt004
+		WHERE code_id = #{codeId}
+	</select>
+	
+	<!-- 오픈마켓 목록 -->
+	<sql id="openList">
+		SELECT data_id dataId
+					, (SELECT data_nm FROM jhit_app.dtlt005 B WHERE A.se_organ_id = B.data_id ) seOrganNm 
+					, se_organ_id seOrganId
+					, data_nm dataNm
+					, data_dc_cn dataDcCn
+					, jhit_app.fn_code_nm(A.data_ty_code , 'DTA011') dataTyCode 
+					, jhit_app.fn_code_nm(A.rnew_cycle_code, 'DTA007') rnewCycleCode 
+					, jhit_app.fn_code_nm(A.last_rnew_era_code, 'DTA007') lastRnewEraCode 
+					, jhit_app.fn_code_nm(A.const_scope_code, 'DTA009') constScopeCode 
+					, jhit_app.fn_code_nm(A.data_cntm_code, 'DTA003') dataCntmCode 
+					, jhit_app.fn_code_nm(A.data_fom_code, 'DTA015') dataFomCode 
+					, jhit_app.fn_code_nm(A.spainf_lclas_code, 'DTA001') spainfLclasCode
+					, jhit_app.fn_code_nm(A.spainf_mlsfc_code, 'DTA002') spainfMlsfcCode
+					, jhit_app.fn_code_nm(A.bass_spainf_lclas_code, 'DTA016') bassSpainfLclasCode
+					, jhit_app.fn_code_nm(A.bass_spainf_mlsfc_code, 'DTA017') bassSpainfMlsfcCode
+					, jhit_app.fn_code_nm(A.bass_spainf_sclas_code, 'DTA018') bassSpainfSclasCode
+					, register_id registerId
+					, TO_TIMESTAMP(reg_dt, 'YYYY-MM-DD HH24:MI:SS') regDt
+					, updusr_id updusrId
+					, TO_TIMESTAMP(updt_dt, 'YYYY-MM-DD HH24:MI:SS') updtDt
+		FROM jhit_app.dtlt001 A
+		WHERE 1=1
+		    AND delete_at = 'N'
+		<if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'dataNm'">
+			    	AND data_nm like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'dataTyCode'">
+			    	AND jhit_app.fn_code_nm(A.data_ty_code, 'DTA011') LIKE '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 국가중점데이터 목록 -->
+	<sql id="nationList">
+		SELECT metdata_id metdataId
+					,data_id dataId
+					,(SELECT data_nm FROM jhit_app.dtlt002 B WHERE A.data_id = B.data_id ) groupDataNm
+					,(SELECT se_kwrd FROM jhit_app.dtlt002 C WHERE A.data_id = C.data_id) seKwrd
+					,data_nm dataNm
+					,jhit_app.fn_code_nm(A.data_ty_code, 'DTA011') dataTyCode 
+					,data_dc_cn dataDcCn
+					,jhit_app.fn_code_nm(A.prdctn_magt_manage_instt_code, 'DTA004') prdctnMagtManageInsttCode 
+					,jhit_app.fn_code_nm(A.prdctn_magt_manage_dept_code, 'DTA005') prdctnMagtManageDeptCode 
+					,jhit_app.fn_code_nm(A.prdctn_magt_prdctn_instt_code, 'DTA004') prdctnMagtPrdctnInsttCode 
+					,jhit_app.fn_code_nm(A.prdctn_magt_prdctn_dept_code, 'DTA005') prdctnMagtPrdctnDeptCode 
+					,prdctn_magt_sys_nm prdctnMagtSysNm
+					,prdctn_magt_rnew_cycle prdctnMagtRnewCycle
+					,spainf_ellips spainfEllips
+					,jhit_app.fn_code_nm(A.spainf_cntm_code, 'DTA003') spainfCntmCode 
+					,spainf_prj spainfPrj
+					,jhit_app.fn_code_nm(A.spainf_objectfom_code, 'DTA008') spainfObjectfomCode
+					,jhit_app.fn_code_nm(A.aggr_magt_manage_instt_code, 'DTA004') aggrMagtManageInsttCode 
+					,jhit_app.fn_code_nm(A.aggr_magt_manage_dept_code, 'DTA005') aggrMagtManageDeptCode 
+					,jhit_app.fn_code_nm(A.aggr_magt_colct_cycle_code, 'DTA006') aggrMagtColctCycleCode 
+					,aggr_magt_sys_nm aggrMagtSysNm
+					,jhit_app.fn_code_nm(A.aggr_magt_colct_mth_code, 'DTA014') aggrMagtColctMthCode 
+					,jhit_app.fn_code_nm(A.const_geo_scope_code, 'DTA009') constGeoScopeCode 
+					,const_time_scope constTimeScope
+					,othbc_opn_sys othbcOpnSys
+					,jhit_app.fn_code_nm(A.othbc_distb_data_cntm_code, 'DTA003') othbcDistbDataCntmCode 
+					,jhit_app.fn_code_nm(A.othbc_distb_data_fom_code, 'DTA015') othbcDistbDataFomCode 
+					,distb_pc_policy distbPcPolicy
+					,distb_sell_mth distbSellMth
+					,change_data_at changeDataAt
+					,rm rm
+					,register_id registerId
+					,TO_TIMESTAMP(reg_dt, 'YYYY-MM-DD HH24:MI:SS') regDt
+					,updusr_id updusrId
+					,TO_TIMESTAMP(updt_dt, 'YYYY-MM-DD HH24:MI:SS') updtDt
+		FROM jhit_app.dtlt003 A
+		WHERE 1=1
+		   AND  delete_at = 'N'
+		<if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'dataNm'">
+			    	AND data_nm like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'dataTyCode'">
+			    	AND jhit_app.fn_code_nm(A.data_ty_code, 'DTA011') LIKE '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 건축데이터개방 목록 -->
+	<sql id="constList">
+		SELECT data_se dataSe
+				,data_nm dataNm
+				,jhit_app.fn_code_nm(A.data_ty_code, 'DTA011') dataTyCode  
+				,jhit_app.fn_code_nm(A.all_rnew_cycle_code, 'DTA007') allRnewCycleCode 
+				,last_data_de lastDataDe
+				,change_data_at changeDataAt
+				,register_id registerId
+				,TO_TIMESTAMP(reg_dt, 'YYYY-MM-DD HH24:MI:SS') regDt
+				,updusr_id updusrId
+				,TO_TIMESTAMP(updt_dt, 'YYYY-MM-DD HH24:MI:SS') updtDt
+				,data_dc_cn dataDcCn
+		FROM jhit_app.dtlt004 A
+		WHERE 1=1
+			AND delete_at = 'N'
+		<if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'dataNm'">
+			    	AND data_nm like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'dataTyCode'">
+			    	AND jhit_app.fn_code_nm(A.data_ty_code, 'DTA011') LIKE '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 오픈마켓 목록조회 -->
+    <select id="selectOpenList" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	<include refid="header" />
+        <include refid="openList" />
+        ORDER BY reg_dt DESC
+        <include refid="footer" />
+    </select>
+    
+    <!-- 국가중점데이터 목록조회 -->
+    <select id="selectNationList" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	<include refid="header" />
+        <include refid="nationList" />
+        ORDER BY reg_dt DESC
+        <include refid="footer" />
+    </select>
+    
+    <!-- 건축데이터개방 목록조회 -->
+    <select id="selectConstList" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	<include refid="header" />
+        <include refid="constList" />
+        ORDER BY reg_dt DESC
+        <include refid="footer" />
+    </select>
+    
+    <!-- 오픈마켓 상세조회 -->
+    <select id="selectOpenDetail" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="String">
+        <include refid="openList" />
+        AND data_id = #{dataId}
+    </select>
+    
+    <!-- 국가중점데이터 상세조회 -->
+    <select id="selectNationDetail" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="String">
+        <include refid="nationList" />
+        AND metdata_id = #{metdataId}
+    </select>
+    
+    <!-- 건축데이터개방 상세조회 -->
+    <select id="selectConstDetail" resultType="com.jhit.admin.manage.vo.ManageVO" parameterType="String">
+        <include refid="constList" />
+        AND data_nm = #{dataNm}
+    </select>
+    
+    <!-- 오픈마켓 등록 -->
+    <insert id="insertOpenData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	INSERT INTO jhit_app.dtlt001 
+    	(
+			data_id
+			,se_organ_id
+			,data_nm
+			,data_ty_code
+			,data_dc_cn
+			,rnew_cycle_code
+			,last_rnew_era_code
+			,const_scope_code
+			,data_cntm_code
+			,data_fom_code
+			,spainf_lclas_code
+			,spainf_mlsfc_code
+			,bass_spainf_lclas_code
+			,bass_spainf_mlsfc_code
+			,bass_spainf_sclas_code
+			,register_id
+			,reg_dt
+			,delete_at
+		) VALUES (
+			#{dataId}
+			,#{seOrganId}
+			,#{dataNm}
+			,#{dataTyCode}
+			,#{dataDcCn}
+			,#{rnewCycleCode}
+			,#{lastRnewEraCode}
+			,#{constScopeCode}
+			,#{dataCntmCode}
+			,#{dataFomCode}
+			,#{spainfLclasCode}
+			,#{spainfMlsfcCode}
+			,#{bassSpainfLclasCode}
+			,#{bassSpainfMlsfcCode}
+			,#{bassSpainfSclasCode}
+			,#{registerId}
+			, now()
+			,'N'
+		)
+    </insert>
+    
+    <!-- 오픈마켓 데이터 수정 -->
+    <update id="updateOpenData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	UPDATE jhit_app.dtlt001
+    	SET se_organ_id 					 = #{seOrganId}
+	    	  ,data_nm 						 = #{dataNm}
+	    	  ,data_ty_code 				 = #{dataTyCode}
+	    	  ,data_dc_cn  				 = #{dataDcCn}
+	    	  ,rnew_cycle_code 			 = #{rnewCycleCode}
+	    	  ,last_rnew_era_code 		 = #{lastRnewEraCode}
+	    	  ,const_scope_code 		 = #{constScopeCode}
+	    	  ,data_cntm_code 			 = #{dataCntmCode}
+	    	  ,data_fom_code 			 = #{dataFomCode}
+	    	  ,spainf_lclas_code 			 = #{spainfLclasCode}
+	    	  ,spainf_mlsfc_code 		 = #{spainfMlsfcCode}
+	    	  ,bass_spainf_lclas_code   = #{bassSpainfLclasCode}
+	    	  ,bass_spainf_mlsfc_code 	 = #{bassSpainfMlsfcCode}
+	    	  ,bass_spainf_sclas_code 	 = #{bassSpainfSclasCode}
+	    	  ,updusr_id 					 = #{updusrId}
+	    	  ,updt_dt 						 = now()
+    	WHERE data_id = #{dataId}
+    </update>
+    
+    <!-- 오픈마켓 데이터 삭제 -->
+    <delete id="deleteOpenData" parameterType="String">
+    	UPDATE jhit_app.dtlt001
+    	SET delete_at = 'Y'
+    	WHERE data_id = #{dataId}
+    </delete>
+    
+    <!-- 국가중점데이터 등록 -->
+    <insert id="insertNationBData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	INSERT INTO jhit_app.dtlt003
+    	(
+			metdata_id
+			,data_id
+			,se_kwrd
+			,data_nm
+			,data_ty_code
+			,data_dc_cn
+			,prdctn_magt_manage_instt_code
+			,prdctn_magt_manage_dept_code
+			,prdctn_magt_prdctn_instt_code
+			,prdctn_magt_prdctn_dept_code
+			,prdctn_magt_sys_nm
+			,prdctn_magt_rnew_cycle
+			,spainf_ellips
+			,spainf_cntm_code
+			,spainf_prj
+			,spainf_objectfom_code
+			,aggr_magt_manage_instt_code
+			,aggr_magt_manage_dept_code
+			,aggr_magt_colct_cycle_code
+			,aggr_magt_sys_nm
+			,aggr_magt_colct_mth_code
+			,const_geo_scope_code
+			,const_time_scope
+			,othbc_opn_sys
+			,othbc_distb_data_cntm_code
+			,othbc_distb_data_fom_code
+			,distb_pc_policy
+			,distb_sell_mth
+			,rm
+			,register_id
+			,reg_dt
+			,delete_at
+		) VALUES (
+			#{metdataId}
+			,#{dataId}
+			,#{seKwrd}
+			,#{dataNm}
+			,#{dataTyCode}
+			,#{dataDcCn}
+			,#{prdctnMagtManageInsttCode}
+			,#{prdctnMagtManageDeptCode}
+			,#{prdctnMagtPrdctnInsttCode}
+			,#{prdctnMagtPrdctnDeptCode}
+			,#{prdctnMagtSysNm}
+			,#{prdctnMagtRnewCycle}
+			,#{spainfEllips}
+			,#{spainfCntmCode}
+			,#{spainfPrj}
+			,#{spainfObjectfomCode}
+			,#{aggrMagtManageInsttCode}
+			,#{aggrMagtManageDeptCode}
+			,#{aggrMagtColctCycleCode}
+			,#{aggrMagtSysNm}
+			,#{aggrMagtColctMthCode}
+			,#{constGeoScopeCode}
+			,#{constTimeScope}
+			,#{othbcOpnSys}
+			,#{othbcDistbDataCntmCode}
+			,#{othbcDistbDataFomCode}
+			,#{distbPcPolicy}
+			,#{distbSellMth}
+			,#{rm}
+			,#{registerId}
+			, now()
+			,'N'
+		)
+    </insert>
+    
+    <!-- 국가중점데이터 수정 -->
+    <update id="updateNationData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	UPDATE jhit_app.dtlt003
+    	SET data_id 											= #{dataId}
+				,se_kwrd 										= #{seKwrd}
+				,data_nm 										= #{dataNm}
+				,data_ty_code 								= #{dataTyCode}
+				,data_dc_cn 									= #{dataDcCn}
+				,prdctn_magt_manage_instt_code 		= #{prdctnMagtManageInsttCode}
+				,prdctn_magt_manage_dept_code 		= #{prdctnMagtManageDeptCode}
+				,prdctn_magt_prdctn_instt_code 		= #{prdctnMagtPrdctnInsttCode}
+				,prdctn_magt_prdctn_dept_code 		= #{prdctnMagtPrdctnDeptCode}
+				,prdctn_magt_sys_nm 						= #{prdctnMagtSysNm}
+				,prdctn_magt_rnew_cycle 					= #{prdctnMagtRnewCycle}
+				,spainf_ellips 									= #{spainfEllips}
+				,spainf_cntm_code 							= #{spainfCntmCode}
+				,spainf_prj 										= #{spainfPrj}
+				,spainf_objectfom_code 					= #{spainfObjectfomCode}
+				,aggr_magt_manage_instt_code 			= #{aggrMagtManageInsttCode}
+				,aggr_magt_manage_dept_code 			= #{aggrMagtManageDeptCode}
+				,aggr_magt_colct_cycle_code 			= #{aggrMagtColctCycleCode}
+				,aggr_magt_sys_nm 							= #{aggrMagtSysNm}
+				,aggr_magt_colct_mth_code 				= #{aggrMagtColctMthCode}
+				,const_geo_scope_code 					= #{constGeoScopeCode}
+				,const_time_scope 							= #{constTimeScope}
+				,othbc_opn_sys 								= #{othbcOpnSys}
+				,othbc_distb_data_cntm_code 			= #{othbcDistbDataCntmCode}
+				,othbc_distb_data_fom_code 				= #{othbcDistbDataFomCode}
+				,distb_pc_policy 								= #{distbPcPolicy}
+				,distb_sell_mth 								= #{distbSellMth}
+				,rm 												= #{rm}
+				,updusr_id 										= #{updusrId}
+				,updt_dt 										= now()
+    	WHERE metdata_id = #{metdataId}
+    </update>
+    
+    <!-- 국가중점데이터 삭제 -->
+    <delete id="deleteNationData" parameterType="String">
+    	UPDATE jhit_app.dtlt003
+    	SET delete_at = 'Y'
+    	WHERE metdata_id = #{metdataId}
+    </delete>
+    
+    <!-- 건축데이터 등록 -->
+    <insert id="insertConstData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	INSERT INTO jhit_app.dtlt004
+    	(
+			data_se
+			,data_nm
+			,data_ty_code
+			,all_rnew_cycle_code
+			,last_data_de
+			,change_data_at
+			,data_dc_cn
+			,register_id
+			,reg_dt
+			,delete_at
+		) VALUES (
+			#{dataSe}
+			,#{dataNm}
+			,#{dataTyCode}
+			,#{allRnewCycleCode}
+			,#{lastDataDe}
+			,#{changeDataAt}
+			,#{dataDcCn}
+			,#{registerId}
+			, now()
+			,'N'
+		)
+    </insert>
+    
+    <!-- 건축데이터 수정 -->
+    <update id="updateConstData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	UPDATE jhit_app.dtlt004
+    	SET data_se 							= #{dataSe}
+				,data_ty_code 				= #{dataTyCode}
+				,all_rnew_cycle_code 		= #{allRnewCycleCode}
+				,last_data_de 					= #{lastDataDe}
+				,change_data_at 				= #{changeDataAt}
+				,data_dc_cn					= #{dataDcCn}
+				,updusr_id 						= #{updusrId}
+				,updt_dt 						= now()
+    	WHERE data_nm = #{dataNm}
+    </update>
+    
+    <!-- 건축데이터 삭제 -->
+    <delete id="deleteConstData" parameterType="String">
+    	UPDATE jhit_app.dtlt004
+    	SET delete_at = 'Y'
+    	WHERE data_nm = #{dataNm}
+    </delete>
+    
+    <!-- 국가중점데이터 목록 조회 -->
+    <select id="selectNationData" resultType="com.jhit.admin.manage.vo.ManageVO">
+    	SELECT data_id dataId
+    			, data_nm dataNm
+    			, se_kwrd seKwrd
+    	FROM jhit_app.dtlt002
+    </select>
+    
+    <!-- 국가중점데이터 등록(메타X) -->
+    <insert id="insertNationAData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	insert into jhit_app.dtlt002
+    	(
+    		data_id
+    		, se_kwrd
+    		, data_nm
+    		, reg_de
+    		, lt_creat_de
+    		, register_id
+    		, reg_dt
+    	)
+    	values (
+    		#{dataId}
+    		, #{seKwrd}
+    		, #{dataNm}
+    		, #{regDe}
+    		, #{ltCreatDe}
+    		, #{registerId}
+    		, now()
+    	)
+    </insert>
+    
+    <!-- 오픈마켓 구분조직 목록 조회 -->
+    <select id="selectSeOrgan" resultType="com.jhit.admin.manage.vo.ManageVO">
+    	SELECT data_id dataId
+    			, data_nm dataNm
+    	FROM jhit_app.dtlt005
+    </select>
+    
+    <!-- 국가중점데이터 등록(메타X) -->
+    <insert id="insertSeOrganData" parameterType="com.jhit.admin.manage.vo.ManageVO">
+    	insert into jhit_app.dtlt005
+    	(
+    		data_id
+    		, data_nm
+    		, register_id
+    		, reg_dt
+    	)
+    	values (
+    		#{dataId}
+    		, #{dataNm}
+    		, #{registerId}
+    		, now()
+    	)
+    </insert>
+    
+</mapper>

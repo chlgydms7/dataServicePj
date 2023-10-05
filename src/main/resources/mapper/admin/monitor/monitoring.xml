@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jhit.admin.monitor.dao.MonitoringDao">
+	
+	<sql id="header">
+        SELECT *
+        FROM (
+            SELECT (ROW_NUMBER() OVER()) as rn, A.*
+            FROM (    
+    </sql>
+    
+    <sql id="footer">
+            ) A
+        ) B WHERE rn BETWEEN #{start} AND #{end}    
+    </sql>
+    
+	<!-- 적재 성공건수 조회 -->
+	<select id="loaderSuccessCount" resultType="int" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="loaderDetail2" />
+				)A
+		WHERE A.exitStatus = 'COMPLETED'
+	</select>
+	
+	<!-- 적재 실패건수 조회 -->
+	<select id="loaderFailCount" resultType="int" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="loaderDetail2" />
+				)A
+		WHERE A.exitStatus = 'FAILED'
+	</select>
+	
+	<!-- 추출 성공건수 조회 -->
+	<select id="extractSuccessCount" resultType="int" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+		select
+	count(A.exrtc_kor_nm) 
+from jhit_app.extrc_log A 
+	where A.use_at = 'Y' and to_char(A.start_dt, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%' and A.extrc_stats = '02' 
+		<if test="searchKeyword != null and searchKeyword != ''">
+			    AND A.exrtc_kor_nm LIKE '%' || #{searchKeyword} || '%'
+			</if>
+	</select>
+	
+	<!-- 추출실패건수 조회 -->
+	<select id="extractFailCount" resultType="int" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+		select
+	count(A.exrtc_kor_nm) 
+from jhit_app.extrc_log A 
+	where A.use_at = 'Y' and to_char(A.start_dt, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%' and A.extrc_stats = '03' 
+		<if test="searchKeyword != null and searchKeyword != ''">
+			    AND A.exrtc_kor_nm LIKE '%' || #{searchKeyword} || '%'
+			</if>
+	</select>
+	
+	<!-- 적재 모니터링 목록 -->
+	<sql id="loaderMonitoringList">
+		SELECT B.job_name jobName
+			,to_char(A.start_time, 'yyyy-mm-dd hh24:mi:ss') AS startTime 
+			,to_char(A.end_time, 'yyyy-mm-dd hh24:mi:ss') AS endTime
+			,MAX(B.job_instance_id) jobInstanceId
+		FROM (SELECT * 
+			 	 FROM jhit_bat.batch_job_execution A 
+			  	WHERE to_char(start_time, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%'
+			    ) A
+			,jhit_bat.batch_job_instance B 
+		WHERE A.job_instance_id = B.job_instance_id 
+			AND B.job_name = 'crawlingJob'
+		GROUP BY B.job_name
+					 ,A.start_time
+					 ,A.end_time
+		ORDER BY A.start_time
+					 ,A.end_time
+	</sql>
+	
+	<sql id="loaderDetail2">
+		SELECT A.*
+		          ,B.*
+		FROM (
+				SELECT B.job_name jobName
+					   ,A.start_time startTime
+					   ,A.end_time endTime
+					   ,MAX(B.job_instance_id) jobInstanceId
+				FROM (SELECT * 
+					 	 FROM jhit_bat.batch_job_execution A 
+					  	WHERE to_char(start_time, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%'
+					    ) A
+					,jhit_bat.batch_job_instance B 
+				WHERE A.job_instance_id = B.job_instance_id 
+					AND B.job_name = 'crawlingJob'
+				GROUP BY B.job_name
+							 ,A.start_time
+							 ,A.end_time
+				ORDER BY A.start_time
+						 ,A.end_time) A
+				,(
+				SELECT A.step_execution_id stepExecutionId 
+					      ,A.step_name stepNm
+					      ,A.start_time stepStartTime
+						  ,A.end_time endTime
+						  ,b.start_time jobStartTime
+						  ,CASE WHEN A.exit_code = 'COMPLETED'  THEN '성공'
+						   		    WHEN A.exit_code = 'FAILED'	  		 THEN '실패'
+						   		    WHEN A.exit_code = 'EXECUTING'   THEN '진행중'
+						   END status
+						  ,A.exit_code exitStatus
+						  ,B.job_instance_id jobInstanceId
+				FROM jhit_bat.batch_step_execution A
+						,jhit_bat.batch_job_execution B
+				WHERE A.job_execution_id = B.job_execution_id) B
+		WHERE A.startTime = B.jobStartTime 
+		AND A.jobInstanceId = B.jobInstanceId 
+		ORDER BY A.jobInstanceId DESC, B.stepExecutionId
+	</sql>
+	
+	<!-- 추출 모니터링 목록 -->
+	<sql id="extractMonitoringList">
+		SELECT B.job_name jobName
+			,to_char(A.start_time, 'yyyy-mm-dd hh24:mi:ss') AS startTime 
+			,to_char(A.end_time, 'yyyy-mm-dd hh24:mi:ss') AS endTime
+			,MAX(B.job_instance_id) jobInstanceId
+		FROM (SELECT * 
+			 	 FROM jhit_bat.batch_job_execution A 
+			  	WHERE to_char(start_time, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%'
+			    ) A
+			,jhit_bat.batch_job_instance B 
+		WHERE A.job_instance_id = B.job_instance_id 
+			AND B.job_name = 'realtimeDataExtractionJob'
+		GROUP BY B.job_name
+					 ,A.start_time
+					 ,A.end_time
+		ORDER BY A.start_time
+					 ,A.end_time
+	</sql>
+	
+	<!-- 적재 모니터링 목록조회 -->
+    <select id="selectLoaderList" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+        <include refid="loaderMonitoringList" />
+    </select>
+    
+    <!-- <select id="selectLoaderList" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+        <include refid="loaderList" />
+    </select> -->
+    
+    <!-- 추출 모니터링 목록조회 -->
+    <select id="selectExtrcList" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+        <include refid="extractMonitoringList" />
+    </select>
+    
+    <!-- 적재 step 상세조회 -->
+    <sql id="loaderDetail">
+    	SELECT A.step_execution_id stepExecutionId
+    		,A.step_name stepNm
+    		,to_char(A.start_time, 'YYYY-MM-DD HH24:MI:SS') AS startTime 
+    		,to_char(A.end_time, 'YYYY-MM-DD HH24:MI:SS') AS endTime
+    		,CASE WHEN A.exit_code = 'COMPLETED'  THEN '성공'
+    			WHEN A.exit_code = 'FAILED'	  		 THEN '실패'
+    			WHEN A.exit_code = 'EXECUTING'   THEN '진행중'
+    			END status
+    		,A.exit_code exitStatus	
+    		,B.job_instance_id jobInstanceId
+		FROM jhit_bat.batch_step_execution A
+				,jhit_bat.batch_job_execution B
+		WHERE B.job_instance_id = CAST(#{jobInstanceId} AS INTEGER)
+		    AND A.job_execution_id = B.job_execution_id
+    </sql>
+    
+    <!-- 추출 상세조회 -->
+    <sql id="extractDetail">
+    	SELECT A.step_execution_id stepExecutionId 
+			      ,A.step_name stepNm
+			      ,A.start_time startTime
+				  ,A.end_time endTime
+				  ,CASE WHEN A.exit_code = 'COMPLETED'  THEN '성공'
+				   		    WHEN A.exit_code = 'FAILED'	  		 THEN '실패'
+				   		    WHEN A.exit_code = 'EXECUTING'   THEN '진행중'
+				   END status
+				  ,A.exit_code exitStatus	
+		FROM jhit_bat.batch_step_execution A
+				,jhit_bat.batch_job_execution B
+		WHERE 1=1
+			AND B.job_instance_id = CAST(#{jobInstanceId} AS INTEGER)
+		    AND A.job_execution_id = B.job_execution_id
+	       	<!-- <if test="searchKeyword != null and searchKeyword != ''">
+			    AND A.step_name LIKE '%' || #{searchKeyword} || '%'
+			</if> -->
+    </sql>
+    
+    <select id="selectLoaderDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+    	<include refid="loaderDetail2" />
+    </select>
+    
+    <select id="selectExtractDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+    	<include refid="extractDetail" />
+    </select>
+    
+    <!-- 크롤링 로그 상세조회 -->
+    <select id="selectCrwlLogDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+        SELECT file_id fileId
+				   ,file_co fileCo
+				   ,file_origin fileOrigin
+				   ,error_cn errorCn
+				   <if test="code == 'crawlingAlStep1' || code == 'crawlingAlStep2' || code == 'crawlingChStep1' || code == 'crawlingChStep2'">
+				   	,(SELECT data_nm FROM jhit_app.dtlt002 B WHERE A.file_id=B.data_id) dataNm
+				   </if>
+				   <if test="code == 'crawlingAlStep3'">
+				   	,(SELECT data_nm FROM jhit_app.dtlt001 B WHERE A.file_id=B.data_id) dataNm
+				   </if>
+				   <if test="code == 'crawlingAlStep4'">
+				   	,(SELECT data_nm FROM jhit_app.dtlt004 B WHERE A.file_id=B.data_nm) dataNm
+				   </if>
+		FROM jhit_app.crwllog A
+		WHERE step_execution_id = #{stepExecutionId}
+    </select>
+    
+    <!-- 적재 로그 상세조회 -->
+    <select id="selectLoadLogDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+        SELECT A.lod_tablenm lodTablenm
+			 	  ,A.lod_origin lodOrigin
+			  	  ,A.lod_nm lodNm
+			  	  ,A.lod_cnt lodCnt
+			  	  ,A.error_cn lodErrorCn
+		FROM jhit_app.dataloader A
+		WHERE A.step_execution_id = #{stepExecutionId}
+    </select>
+    
+    <!-- 크롤링, 적재 로그 통합 상세조회 -->
+    <select id="selectCrwlLoadLogDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+    	SELECT AA.data_nm AS dataNm
+    		, AA.file_co AS fileCo
+    		, AA.error_cn AS errorCn
+    		, BB.lod_nm AS lodNm
+    		, BB.lod_cnt AS lodCnt
+    		, BB.error_cn AS lodErrorCn
+		FROM 
+		(
+			SELECT A.file_id 
+			, A.file_co 
+			, A.file_origin 
+			, A.error_cn 
+			<if test="code == 'crawlingAlStep1' || code == 'crawlingAlStep2' || code == 'crawlingChStep1' || code == 'crawlingChStep2'">
+		   	,(SELECT data_nm FROM jhit_app.dtlt002 B WHERE A.file_id=B.data_id) AS data_nm
+		   </if>
+		   <if test="code == 'crawlingAlStep3'">
+		   	,(SELECT data_nm FROM jhit_app.dtlt001 B WHERE A.file_id=B.data_id) AS data_nm
+		   </if>
+		   <if test="code == 'crawlingAlStep4'">
+		   	,(SELECT data_nm FROM jhit_app.dtlt004 B WHERE A.file_id=B.data_nm) AS data_nm
+		   </if>
+			, A.step_execution_id
+			FROM jhit_app.crwllog A
+			WHERE A.step_execution_id = #{stepExecutionId}
+		) AA FULL OUTER JOIN 
+		(
+			SELECT C.lod_tablenm 
+			, C.lod_origin 
+			, C.lod_nm 
+			, C.lod_cnt 
+			, C.error_cn 
+			FROM jhit_app.dataloader C 
+			WHERE C.step_execution_id = #{stepExecutionId}
+		) BB
+		ON AA.data_nm = BB.lod_nm
+    </select>
+    
+    <select id="selectStepLog" parameterType="com.jhit.admin.monitor.vo.MonitoringVO" resultType="com.jhit.admin.monitor.vo.MonitoringVO">
+    	SELECT step_name 			stepNm
+			  	  ,job_execution_id 	jobExecutionId
+			  	  ,start_time 			startTime
+			  	  ,end_time 			endTime
+			 	  ,status 				startSttus
+			  	  ,exit_code 			endSttus
+			  	  ,exit_message 		exitMsg
+		FROM jhit_bat.batch_step_execution
+		WHERE step_execution_id = CAST(#{stepExecutionId} AS INTEGER)
+    </select>
+    
+    <!-- 추출 로그 상세조회 -->
+    <select id="selectExtrcLogDetail" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+    SELECT *
+        FROM (
+            SELECT (ROW_NUMBER() OVER()) as rn, A.*
+            FROM (
+					select
+							A.exrtc_kor_nm exrtcKorNm
+							,A.extrc_lc extrcIc
+							,A.start_dt startTime
+							,A.end_dt endTime
+							,CASE WHEN A.extrc_stats = '02'  THEN '성공'
+								     WHEN A.extrc_stats = '03'  THEN '실패'
+								     WHEN A.extrc_stats = '01'  THEN '진행중'
+								END status
+							,A.extrc_error_cn extrcErrorCn
+							,A.extrc_expire_dt extrcExpireDt
+							,A.job_execution_id jobExecutionId
+							,A.extrc_size extrcSize
+							,A.extrc_log_no extrcLogNo
+							,A.use_at useAt
+					FROM jhit_app.extrc_log A 
+						WHERE 1=1
+						    AND TO_CHAR(A.start_dt, 'yyyy-mm-dd hh24:mi:ss') LIKE '%' || #{date} || '%'
+						<if test="searchKeyword != null and searchKeyword != ''">
+						    AND A.exrtc_kor_nm LIKE '%' || #{searchKeyword} || '%'
+						</if>
+					ORDER BY A.start_dt desc 
+					)A
+		)B
+    </select>
+    
+<!--     추출 로그 지역조회 -->
+    <select id="selectLegaldongNm" resultType="String" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+		SELECT  legaldong_nm legaldongNm
+			FROM jhit_app.dtmt005 where bjdong_code =RPAD(#{extrcIc},'10','0')
+    </select>
+    
+    
+<!--    데이터 다운로드 -->
+    <select id="selectExtrcFile" resultType="com.jhit.admin.monitor.vo.MonitoringVO" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+ SELECT 
+        a.extrc_file_nm as extrcFileNm
+      , a.extrc_file_path as extrcFilePath     
+      , a.exrtc_kor_nm||'_'||replace(b.legaldong_nm,' ','_')||'_'||to_char(a.end_dt,'YYYYMMDD')||'.zip' as exrtcKorNm
+  FROM jhit_app.extrc_log a , jhit_app.dtmt005 b
+ WHERE rpad(a.extrc_lc,'10','0') = b.bjdong_code 
+    AND extrc_log_no = #{extrcLogNo}::numeric 
+    </select>        
+    
+    <!-- 재실행(크롤링로그 재실행여부 수정) -->
+    <update id="retryCrwl" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+ 		UPDATE jhit_app.crwllog
+ 		SET re_at = 'Y'
+ 			  ,re_dt = now()
+		WHERE step_execution_id = #{stepExecutionId}
+    </update>
+    
+    <!-- 재실행(적재 재실행여부 수정) -->
+    <update id="retryLoad" parameterType="com.jhit.admin.monitor.vo.MonitoringVO">
+ 		UPDATE jhit_app.dataloader
+ 		SET re_at = 'Y'
+ 			  ,re_dt = now()
+		WHERE step_execution_id = #{stepExecutionId}
+    </update> 
+    
+</mapper>

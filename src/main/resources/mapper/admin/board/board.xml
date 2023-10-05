@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jhit.admin.board.dao.BoardDao">
+	
+	<sql id="header">
+        SELECT *
+        FROM (
+            SELECT (ROW_NUMBER() OVER()) as rn, A.*
+            FROM (    
+    </sql>
+    
+    <sql id="footer">
+            ) A
+        ) B WHERE rn BETWEEN #{start} AND #{end}    
+    </sql>
+    
+	<!-- 총건수 조회 -->
+	<select id="totalCount" resultType="int" parameterType="com.jhit.admin.board.vo.BoardVO">
+		SELECT count(A.*)
+		FROM 
+				(SELECT idx
+							,userId
+							,title
+							,content
+							,to_date(reg_dt, 'YYYY-MM-DD')as regDt 
+							,to_date(mod_dt, 'YYYY-MM-DD')as modDt
+							,(SELECT name FROM jhit_app."user" WHERE A.userid = B.id)as userName
+		        FROM jhit_app.board_test A
+		        		,jhit_app."user" B
+		        <if test="searchCondition != null and searchCondition != ''">
+		        	<if test="searchKeyword != null and searchKeyword != ''">
+						<if test="searchCondition == 'title'">
+					    	WHERE title like '%' || #{searchKeyword} || '%'
+						</if>
+						<if test="searchCondition == 'content'">
+							WHERE content like '%' || #{searchKeyword} || '%'
+						</if>
+						<if test="searchCondition == 'userName'">
+							WHERE (SELECT name FROM jhit_app."user" WHERE A.userid = B.id) like '%' || #{searchKeyword} || '%'
+						</if>
+					</if>
+				</if>
+		        ORDER BY reg_dt DESC)A
+	</select>
+	
+	<!-- 목록조회 -->
+    <select id="selectList" resultType="com.jhit.admin.board.vo.BoardVO" parameterType="com.jhit.admin.board.vo.BoardVO">
+    	<include refid="header" />
+        SELECT (ROW_NUMBER() OVER()) rnum
+			        ,idx
+					,userId
+					,title
+					,content
+					,to_date(reg_dt, 'YYYY-MM-DD')as regDt 
+					,to_date(mod_dt, 'YYYY-MM-DD')as modDt
+					,(SELECT name FROM jhit_app."user" WHERE A.userid = B.id)as userName
+        FROM jhit_app.board_test A
+        		,jhit_app."user" B
+        <if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'title'">
+			    	WHERE title like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'content'">
+					WHERE content like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'userName'">
+					WHERE (SELECT name FROM jhit_app."user" WHERE A.userid = B.id) like '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if>
+        ORDER BY reg_dt DESC
+        <include refid="footer" />
+    </select>
+    
+    <!-- 상세조회 -->
+    <select id="selectDetail" resultType="com.jhit.admin.board.vo.BoardVO" parameterType="int">
+        SELECT idx
+					,userId
+					,title
+					,content
+					,to_timestamp(reg_dt, 'YYYY-MM-DD HH24:MI:SS')as regDt 
+					,to_timestamp(mod_dt, 'YYYY-MM-DD HH24:MI:SS')as modDt
+					,(SELECT name FROM jhit_app."user" WHERE A.userid = B.id)as userName
+        FROM jhit_app.board_test A
+        		,jhit_app."user" B
+        WHERE idx = #{idx}
+    </select>
+    
+    <!-- 등록 -->
+    <insert id="insertBoardData" parameterType="com.jhit.admin.board.vo.BoardVO">
+    	INSERT INTO jhit_app.board_test
+		(
+		    idx
+		    ,userid
+		    ,title
+		    ,content
+		    ,reg_dt
+		) VALUES
+		(
+		    NEXTVAL('jhit_app.seq_board_idx')
+		    ,#{userid}
+		    ,#{title}
+		    ,#{content}	
+		    ,now()
+	    )
+    </insert>
+    
+    <!-- 수정 -->
+    <update id="updateBoardData" parameterType="com.jhit.admin.board.vo.BoardVO">
+    	UPDATE jhit_app.board_test
+    	SET title = #{title}
+	    	  ,content = #{content}
+	    	  ,mod_dt = now()
+    	WHERE idx = #{idx}
+    </update>
+    
+    <delete id="deleteBoardData" parameterType="int">
+    	DELETE FROM jhit_app.board_test
+    	WHERE idx = #{idx}
+    </delete>
+    
+</mapper>

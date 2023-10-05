@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jhit.admin.crawl.dao.CrawlingDao">
+	
+	<sql id="header">
+        SELECT *
+        FROM (
+            SELECT (ROW_NUMBER() OVER()) as rn, A.*
+            FROM (    
+    </sql>
+    
+    <sql id="footer">
+            ) A
+        ) B WHERE rn BETWEEN #{start} AND #{end}    
+    </sql>
+    
+	<!-- 총건수 조회 -->
+	<select id="totalCount" resultType="int" parameterType="com.jhit.admin.crawl.vo.CrawlingVO">
+		SELECT count(A.*)
+		FROM 
+				(
+					<include refid="crawlingList" />
+				)A
+	</select>
+	
+	<!-- 크롤링 목록 -->
+	<sql id="crawlingList">
+		SELECT job_execution_id jobExecutionId
+				   ,step_name stepNm
+				   ,start_time startTime
+				   --,CASE WHEN status = 'COMPLETED'  THEN '시작완료' 
+				   --		   	WHEN status = 'STARTED'		THEN '시작'
+				   --		   	WHEN status = 'FAILED'			THEN '실패'
+				   --	END startStatus
+				   ,status startStatus
+				   ,end_time endTime
+				   --,CASE WHEN exit_code = 'COMPLETED'  THEN '완료'
+				   --		    WHEN exit_code = 'FAILED'	  		 THEN '실패'
+				   --		    WHEN exit_code = 'EXECUTING'   THEN '진행중'
+				   --	END endStatus
+				   ,exit_code endStatus
+		FROM jhit_bat.batch_step_execution
+		WHERE step_name LIKE 'crawlingStep%'
+		<!-- <if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'stepNm'">
+			    	AND step_name like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'startStatus'">
+			    	AND status like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'endStatus'">
+			    	AND exit_code like '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if> -->
+	</sql>
+	
+	<!-- 모니터링 목록 -->
+	<sql id="monitoringList">
+		SELECT (SELECT B.job_name 
+					FROM jhit_bat.batch_job_instance B 
+					WHERE A.job_instance_id = B.job_instance_id) jobName
+				   ,A.start_time startTime
+				   ,A.end_time endTime
+				   ,A.status status
+		FROM jhit_bat.batch_job_execution A
+				,jhit_bat.batch_job_instance C
+		WHERE C.job_name LIKE '%crawling%'
+		<!-- <if test="searchCondition != null and searchCondition != ''">
+        	<if test="searchKeyword != null and searchKeyword != ''">
+				<if test="searchCondition == 'stepNm'">
+			    	AND step_name like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'startStatus'">
+			    	AND status like '%' || #{searchKeyword} || '%'
+				</if>
+				<if test="searchCondition == 'endStatus'">
+			    	AND exit_code like '%' || #{searchKeyword} || '%'
+				</if>
+			</if>
+		</if> -->
+	</sql>
+	
+	<!-- 크롤링 목록조회 -->
+    <select id="selectList" resultType="com.jhit.admin.crawl.vo.CrawlingVO" parameterType="com.jhit.admin.crawl.vo.CrawlingVO">
+    	<include refid="header" />
+        <include refid="monitoringList" />
+        ORDER BY A.start_time DESC, A.end_time DESC
+        <include refid="footer" />
+    </select>
+    
+    <!-- 크롤링 상세조회 -->
+    <select id="selectDetail" resultType="com.jhit.admin.crawl.vo.CrawlingVO" parameterType="int">
+        SELECT file_id fileId
+				   ,file_co fileCo
+				   ,file_origin fileOrigin
+				   ,error_cn errorCn
+		FROM jhit_dta.crwllog A
+		WHERE file_sn = #{jobExecutionId}
+    </select>
+    
+</mapper>

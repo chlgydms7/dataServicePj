@@ -1,0 +1,39 @@
+/* 사용자지정css */
+.td-content{height: 200px; width: 100%;}
+.white[readonly]{	background-color: #fff;}
+.white{border: aliceblue;}
+.form-align{text-align: center; background-color: rgba(195, 199, 202, 1)}
+/* .tr-border{border: 1px solid #a09e9e;padding: 7px;} */
+.wid-mar{min-width: 100px; margin: 0px 5px; float: right; font-size: 17px;}
+.border-btn:hover{color: #fff;}
+.table-tr:hover{background-color: #fafbfc;}
+.mb-3{margin-bottom: -1rem!important;}
+.nice-select{height: 51px; /*float:  right ;*/}
+.current{line-height: 49px;}
+.scondition_label{margin-right: 10px; padding-top: 13px;}
+.tot-div{width: 1200px; padding: 50px 20px;}
+.btn-size{padding: 27px 37px !important;}
+.btn-usr{color: #fff; background: #3c4761; font-size: 12pt; padding: 3px 7px; border: 0px; cursor: pointer; border-radius: 5px; text-align: center; float: right; margin: 8px;}
+select{height: 40px;border-radius: 5px;border-color: #dbdbdb;-webkit-tap-highlight-color: transparent;cursor: pointer;font-family: inherit;font-size: 13px;font-weight: normal;line-height: 40px;padding-left: 10px;text-align: left !important;user-select: none; white-space: nowrap;}
+select option:checked, select option:hover {background-color: #f6f6f6;}
+radio{padding: 5px;}
+.readonly{background-color: #f6f6f6 !important;}
+.btn-retry{min-width: 70px; width: 80px; padding: 12px 17px; background-color: #b74646;}
+.btn-retry-all{width: 95px; min-width: 95px; padding: 24px 17px; float: right; margin-bottom: 10px; background-color: #b74646;}
+.title-dec{padding-left: 290px; margin-top: 30px;}
+.modal{ position:absolute; width:100%; height:100%; background: rgba(0,0,0,0.8); top:0; left:0; display:none; }
+.modal_content{width:473px; height:525px;background:#fff; border-radius:10px;position:relative; top:50%; left:50%;margin-top:-260px; margin-left:-238px;text-align:center;box-sizing:border-box; padding:74px 0;line-height:23px; cursor:pointer;}
+.modal_header{border-top-left-radius: 10px; border-top-right-radius: 10px; background-color: rgba(80, 125, 193, 1); height: 60px; margin-top: -75px;}
+.modal_header_ct{color: #ffffff; font-size: 26px; padding-top: 19px;}
+
+/* 페이징 */
+.pagination{justify-content: center;}
+.nowPage{margin: 5px; height: 30px; width: 30px; color: #1045c3 !important; cursor: pointer;}
+.restPage{margin: 5px; height: 30px; width: 30px; color: rgb(128, 128, 128) !important; cursor: pointer;}
+.restPage:hover{margin: 5px; height: 30px; width: 30px; color: #1045c3 !important; cursor: pointer;}
+.pre{margin: 5px; height: 30px; width: 30px; color: rgb(128, 128, 128) !important; font-size: 19px; cursor: pointer;}
+.pre:hover{margin: 5px; height: 30px; width: 30px; color: #1045c3 !important; font-size: 19px; cursor: pointer;}
+.next{margin: 5px; height: 30px; width: 30px; color: rgb(128, 128, 128) !important; font-size: 19px; cursor: pointer;}
+.next:hover{margin: 5px; height: 30px; width: 30px; color: #1045c3 !important; font-size: 19px; cursor: pointer;}
+.form-control{border-radius: 5px!important;}
+#searchBtn{border-radius: 5px;}
